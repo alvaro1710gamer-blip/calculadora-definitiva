@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Calculadora Pro + Graficador + Detector AI Avanzado</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.10.141/pdf.min.js"></script>
+<style>
+body{background:linear-gradient(135deg,#141e30,#243b55);font-family:Segoe UI;display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:10px;padding:10px;}
+.panel{background:#0f172a;padding:12px;border-radius:12px;box-shadow:0 0 15px black;color:#00ffcc;font-size:12px;}
+.calculadora{width:300px;}
+#pantalla{width:100%;height:50px;font-size:22px;text-align:right;border:none;border-radius:8px;background:black;color:#00ffcc;margin-bottom:8px;}
+.fila{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:5px;}
+button{height:36px;border:none;border-radius:6px;cursor:pointer;font-size:12px;}
+button:hover{background:#00ffcc;}
+.historial{width:180px;height:200px;overflow:auto;background:#020617;padding:6px;}
+textarea{width:180px;height:200px;background:#020617;color:#00ffcc;border:none;border-radius:6px;padding:6px;}
+canvas{background:white;border-radius:6px;border:1px solid #ccc;}
+input{width:100%;margin:3px 0;border-radius:4px;border:none;padding:3px;}
+.resultado{background:#020617;padding:5px;border-radius:5px;margin-top:5px;font-size:12px;}
+</style>
+</head>
+<body>
+
+<!-- Calculadora Científica -->
+<div class="panel calculadora">
+    <input id="pantalla" disabled>
+    <div class="fila">
+        <button onclick="accion('7')">7</button><button onclick="accion('8')">8</button><button onclick="accion('9')">9</button><button onclick="accion('/')">÷</button>
+    </div>
+    <div class="fila">
+        <button onclick="accion('4')">4</button><button onclick="accion('5')">5</button><button onclick="accion('6')">6</button><button onclick="accion('*')">×</button>
+    </div>
+    <div class="fila">
+        <button onclick="accion('1')">1</button><button onclick="accion('2')">2</button><button onclick="accion('3')">3</button><button onclick="accion('-')">−</button>
+    </div>
+    <div class="fila">
+        <button onclick="accion('0')">0</button><button onclick="accion('.')">.</button><button onclick="accion('+')">+</button><button onclick="accion('=')">=</button>
+    </div>
+    <div class="fila">
+        <button onclick="accion('Math.sin(')">sin</button>
+        <button onclick="accion('Math.cos(')">cos</button>
+        <button onclick="accion('Math.tan(')">tan</button>
+        <button onclick="accion('Math.sqrt(')">√</button>
+    </div>
+</div>
+
+<!-- Historial -->
+<div class="panel">
+    <h3>📜 Historial</h3>
+    <div class="historial" id="historial"></div>
+</div>
+
+<!-- Notas -->
+<div class="panel">
+    <h3>📝 Notas</h3>
+    <textarea id="notas"></textarea>
+    <button onclick="descargarNotas()">💾 Descargar PDF</button>
+</div>
+
+<!-- Graficador -->
+<div class="panel">
+    <h3>📈 Graficador Total</h3>
+    <input id="funcion" placeholder="Ej: sin(x), cos(x), tan(x), exp(x), log(x), sqrt(x)">
+    <button onclick="graficar()">Graficar</button>
+    <canvas id="grafica" width="220" height="180"></canvas>
+</div>
+
+<!-- Subnetting -->
+<div class="panel">
+    <h3>🌐 Subnetting + CIDR + Gateway</h3>
+    <input id="ip" placeholder="IP (192.168.1.0)">
+    <input id="mascara" placeholder="Prefijo (/24)">
+    <button onclick="calcularSubnet()">Calcular</button>
+    <div class="resultado" id="subnetResultado"></div>
+</div>
+
+<!-- Detector AI Avanzado -->
+<div class="panel">
+    <h3>🤖 Detector de Texto AI Avanzado</h3>
+    <input type="file" id="txtFile">
+    <input type="file" id="pdfFile" accept="application/pdf">
+    <textarea id="textoAI" placeholder="O pega tu texto aquí"></textarea>
+    <button onclick="detectarAI()">Analizar Texto</button>
+    <div class="resultado" id="resultadoAI"></div>
+</div>
+
+<audio id="click" src="https://assets.mixkit.co/sfx/preview/mixkit-keyboard-click-1126.mp3"></audio>
+
+<script>
+// Variables generales
+let pantalla=document.getElementById("pantalla");
+let historial=document.getElementById("historial");
+let notas=document.getElementById("notas");
+let sonido=document.getElementById("click");
+
+// Guardado local
+notas.value=localStorage.getItem("notas")||"";
+historial.innerHTML=localStorage.getItem("historial")||"";
+notas.oninput=()=>localStorage.setItem("notas",notas.value);
+
+// Calculadora
+function accion(v){
+    sonido.currentTime=0;sonido.play();
+    if(v==="="){
+        try{
+            let res=eval(pantalla.value);
+            historial.innerHTML+=pantalla.value+" = "+res+"<br>";
+            pantalla.value=res;
+            localStorage.setItem("historial",historial.innerHTML);
+        }catch{pantalla.value="Error";}
+    }else pantalla.value+=v;
+}
+
+// Graficador
+function graficar(){
+    const c=document.getElementById("grafica");
+    const ctx=c.getContext("2d");
+    ctx.clearRect(0,0,c.width,c.height);
+    const fInput=document.getElementById("funcion").value;
+    try{
+        ctx.beginPath();
+        ctx.strokeStyle="blue";
+        const scaleX=10, scaleY=20;
+        const centerY=c.height/2;
+        for(let px=0;px<=c.width;px++){
+            let x=(px)/scaleX;
+            let yValue=0;
+            try{yValue=eval(fInput.replaceAll("x","("+x+")"));}
+            catch{yValue=0;}
+            let py=centerY-yValue*scaleY;
+            if(px===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+        }
+        ctx.stroke();
+        ctx.strokeStyle="black";
+        ctx.beginPath();
+        ctx.moveTo(0,centerY); ctx.lineTo(c.width,centerY);
+        ctx.moveTo(0,0); ctx.lineTo(0,c.height);
+        ctx.stroke();
+    }catch(e){alert("Error en función: "+e);}
+}
+
+// Subnetting
+function calcularSubnet(){
+    let ip=document.getElementById("ip").value.split(".").map(Number);
+    let pref=parseInt(document.getElementById("mascara").value.replace("/",""));
+    if(ip.length!==4||pref<0||pref>32){alert("IP o prefijo inválido");return;}
+    let bin=ip.map(o=>("00000000"+o.toString(2)).slice(-8)).join("");
+    let red=bin.substring(0,pref).padEnd(32,"0");
+    let broad=bin.substring(0,pref).padEnd(32,"1");
+    function binToIp(b){return [b.slice(0,8),b.slice(8,16),b.slice(16,24),b.slice(24,32)].map(x=>parseInt(x,2)).join(".");}
+    let redIP=binToIp(red);
+    let broadIP=binToIp(broad);
+    let primerHost=binToIp((parseInt(red,2)+1).toString(2).padStart(32,"0"));
+    let ultimoHost=binToIp((parseInt(broad,2)-1).toString(2).padStart(32,"0"));
+    let hosts=Math.pow(2,32-pref)-2;
+    let maskDec=binToIp(red.substring(0,pref).padEnd(32,"0"));
+    let gateway=primerHost;
+    document.getElementById("subnetResultado").innerHTML=
+        `Red: ${redIP}<br>Broadcast: ${broadIP}<br>Primer Host: ${primerHost}<br>Último Host: ${ultimoHost}<br>Hosts: ${hosts}<br>Gateway: ${gateway}<br>Máscara: ${maskDec}<br>CIDR: /${pref}`;
+}
+
+// Descargar notas PDF
+function descargarNotas(){
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+    notas.value.split("\n").forEach((line,i)=>{doc.text(10,10+i*10,line);});
+    doc.save("Notas_Calculadora.pdf");
+}
+
+// Leer TXT
+document.getElementById("txtFile").addEventListener("change", function(e){
+    const file=e.target.files[0];
+    if(file){
+        const reader=new FileReader();
+        reader.onload=function(evt){document.getElementById("textoAI").value=evt.target.result;}
+        reader.readAsText(file);
+    }
+});
+
+// Leer PDF
+document.getElementById("pdfFile").addEventListener("change", function(e){
+    const file=e.target.files[0];
+    if(file){
+        const reader=new FileReader();
+        reader.onload=function(evt){
+            const typedarray=new Uint8Array(evt.target.result);
+            pdfjsLib.getDocument(typedarray).promise.then(pdf=>{
+                let pages=[];
+                let promises=[];
+                for(let i=1;i<=pdf.numPages;i++){
+                    promises.push(pdf.getPage(i).then(page=>page.getTextContent().then(tc=>{
+                        pages.push(tc.items.map(it=>it.str).join(" "));
+                    })));
+                }
+                Promise.all(promises).then(()=>{
+                    document.getElementById("textoAI").value=pages.join("\n");
+                });
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    }
+});
+
+// Detector AI Avanzado
+function detectarAI(){
+    const text=document.getElementById("textoAI").value;
+    if(!text){alert("Pega o sube un texto");return;}
+    const frases=text.split(/[.!?]/).map(f=>f.trim()).filter(f=>f.length>0);
+    const palabras=text.split(/\s+/).filter(p=>p.length>0);
+    const patrones=["sin embargo","además","por lo tanto","es importante destacar","en conclusión","según los datos"];
+    let rep=patrones.reduce((acc,p)=>text.includes(p)?acc+1:acc,0);
+    
+    // Métricas avanzadas
+    const longitudPromedio=palabras.length/frases.length;
+    const diversidad=palabras.length / new Set(palabras.map(w=>w.toLowerCase())).size;
+    const puntuacion=text.split(/[.,;:!?]/).length / frases.length;
+    
+    // Fórmula combinada
+    let porcentaje=Math.min(100,
+        Math.round(
+            rep/patrones.length*40 +             // patrones típicos IA
+            Math.min(1,longitudPromedio/20)*30 + // frases uniformes
+            Math.min(1,diversidad/2)*20 +        // poca diversidad léxica
+            Math.min(1,puntuacion/2)*10          // puntuación típica IA
+        )
+    );
+    document.getElementById("resultadoAI").innerHTML=`Estimación de contenido generado por IA: <b>${porcentaje}%</b>`;
+}
+</script>
+</body>
+</html>
